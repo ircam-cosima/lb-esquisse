@@ -42,13 +42,41 @@ soundworks.server.setClientConfigDefinition((clientType, config, httpRequest) =>
   };
 });
 
+
+// parse configuration,
+// create params and osc bindings
+
 const sharedParams = soundworks.server.require('shared-params');
+const osc = soundworks.server.require('osc');
 
-sharedParams.addNumber('volume', 'Volume', -80, 6, 1, -20);
-sharedParams.addEnum('start-stop', 'Start / Stop', ['start', 'stop'], 'stop');
+// common params
+sharedParams.addTrigger('/reload', 'Reload');
 
-const labels = score.map(part => part.label);
-sharedParams.addEnum('parts', 'Parts', labels, labels[0]);
+sharedParams.addEnum('/start-stop', 'Start / Stop', ['start', 'stop'], 'stop');
+osc.receive('/start-stop', value => {
+
+  sharedParams.update('/start-stop', value);
+});
+
+score.forEach(group => {
+  // handle volumes
+  const volumeChannel = `/${group.label}/volume`;
+  sharedParams.addNumber(volumeChannel, 'Volume', -80, 6, 1, -20);
+
+  osc.receive(volumeChannel, value => sharedParams.update(volumeChannel, value));
+
+  // handle parts for each groups
+  const partsChannel = `/${group.label}/parts`;
+  console.log(partsChannel);
+  const labels = group.parts.map(part => part.label);
+  sharedParams.addEnum(partsChannel, 'Parts', labels, labels[0]);
+
+  osc.receive(partsChannel, value => {
+    console.log(value);
+    sharedParams.update(partsChannel, value);
+  });
+});
+
 // score.forEach(part => sharedParams.addTrigger(part.label, part.label));
 
 // create the experience

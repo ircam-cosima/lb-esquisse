@@ -11,26 +11,16 @@ const template = `
   <div class="foreground">
     <div class="section-top flex-middle"></div>
     <div class="section-center">
-      <label>
-        frequency:
-        <input id="frequency" type="number" value="<%= frequency %>" />
-      </label>
-      <label>
-        gain:
-        <input id="gain" type="number" value="<%= gain %>" />
-      </label>
-      <label>
-        tremolo frequency:
-        <input id="tremolo-frequency" type="number" value="<%= tremoloFrequency %>" />
-      </label>
-      <label>
-        tremolo depth:
-        <input id="tremolo-depth" type="number" value="<%= tremoloDepth %>" />
-      </label>
-      <label>
-        mute:
-        <input id="mute" type="checkbox" />
-      </label>
+      <% if (debug) { %>
+        <p>group: <%= group %></p>
+        <p>index: <%= index %></p>
+        <p>frequency: <%= frequency %></p>
+        <p>gain: <%= gain %></p>
+        <p>tremoloFrequency: <%= tremoloFrequency %></p>
+        <p>tremoloDepth: <%= tremoloDepth %></p>
+
+        <div class="gain-feedback" style="opacity: <%= currentGain %>"></div>
+      <% } %>
     </div>
     <div class="section-bottom flex-middle"></div>
   </div>
@@ -42,13 +32,24 @@ class PlayerExperience extends soundworks.Experience {
   constructor(assetsDomain) {
     super();
 
-    this.platform = this.require('platform', { features: ['web-audio'] });
+    this.platform = this.require('platform', { features: ['web-audio', 'wake-lock'] });
     this.checkin = this.require('checkin', { showDialog: false });
     this.sharedParams = this.require('shared-params');
+
+    this.group = null;
   }
 
   start() {
     super.start();
+
+    const numGroups = score.length;
+    const groupLabels = score.map(group => group.label);
+
+    // define group and client index inside the group
+    this.groupIndex = client.index % numGroups;
+    this.score = score[this.groupIndex];
+    this.groupLabel = this.score.label;
+    this.indexInGroup = Math.floor(client.index / numGroups);
 
     // initialize the view
     this.master = audioContext.createGain();
@@ -56,76 +57,75 @@ class PlayerExperience extends soundworks.Experience {
     this.master.gain.value = 1;
     this.master.gain.setValueAtTime(1, audioContext.currentTime);
 
-    this.mute = audioContext.createGain();
-    this.mute.connect(this.master);
-    this.mute.gain.value = 1;
-
     this.synth = new Synth();
-    this.synth.connect(this.mute);
+    this.synth.connect(this.master);
+
+    const debugView = true;
 
     // view
     this.view = new soundworks.View(template, {
+      debug: debugView,
+      group: this.groupLabel,
+      index: this.indexInGroup,
       frequency: 0,
       gain: 0,
       tremoloFrequency: 0,
       tremoloDepth:0,
-    }, {
-      'change #frequency': e => {
-        this.synth.frequency = parseInt(e.target.value);
-      },
-      'change #gain': e => {
-        this.synth.gain = parseFloat(e.target.value);
-      },
-      'change #tremolo-frequency': e => {
-        this.synth.tremoloFrequency = parseInt(e.target.value);
-      },
-      'change #tremolo-depth': e => {
-        this.synth.tremoloDepth = parseFloat(e.target.value);
-      },
-      'change #mute': e => {
-        if (e.target.checked)
-          this.mute.gain.value = 0;
-        else
-          this.mute.gain.value = 1;
-      },
-    }, {
+      currentGain: 0,
+    }, {}, {
       id: this.id,
       preservePixelRatio: true,
     });
 
     // params
-    this.sharedParams.addParamListener('volume', value => {
-      const gain = decibelToLinear(value);
+    this.sharedParams.addParamListener('/reload', () => {
+      window.location.reload(true);
+    });
+
+    this.sharedParams.addParamListener(`/${this.groupLabel}/volume`, value => {
+      const gain = Math.min(1, Math.max(0, decibelToLinear(value)));
       const now = audioContext.currentTime;
-      this.master.gain.linearRampToValueAtTime(gain, now + 0.01);
+
+      this.master.gain.cancelScheduledValues(now);
+      this.master.gain.setValueAtTime(this.master.gain.value, now);
+      this.master.gain.linearRampToValueAtTime(gain, now + 0.05);
+
+      if (debugView) {
+        this.view.model.currentGain = Math.sqrt(gain);
+        this.view.render();
+      }
     });
 
-    this.sharedParams.addParamListener('start-stop', value => {
-      if (value === 'start')
-        this.mute.gain.value = 1;
-      else if (value === 'stop')
-        this.mute.gain.value = 0;
-    });
+    this.sharedParams.addParamListener(`/${this.groupLabel}/parts`, label => {
+      const part = this.score.parts.find(part => part.label === label);
+      const indexInGroup = this.indexInGroup;
 
-    this.sharedParams.addParamListener('parts', label => {
-      const part = score.find(part => part.label === label);
+      const frequency = part.frequencies[indexInGroup % part.frequencies.length];
+      const gain = part.gains[indexInGroup % part.gains.length];
+      const tremoloFrequency = part.tremoloFrequencies[indexInGroup % part.tremoloFrequencies.length];
+      const tremoloDepth = part.tremoloDepths[indexInGroup % part.tremoloDepths.length];
 
-      const frequency = part.frequencies[client.index % part.frequencies.length];
-      const gain = part.gains[client.index % part.gains.length];
-      const tremoloFrequency = part.tremoloFrequencies[client.index % part.tremoloFrequencies.length];
-      const tremoloDepth = part.tremoloDepths[client.index % part.tremoloDepths.length];
-
-      this.synth.frequency = frequency;
       this.synth.gain = gain;
+      this.synth.frequency = frequency;
       this.synth.tremoloFrequency = tremoloFrequency;
       this.synth.tremoloDepth = tremoloDepth;
 
-      this.view.model.frequency = frequency;
-      this.view.model.gain = gain;
-      this.view.model.tremoloFrequency = tremoloFrequency;
-      this.view.model.tremoloDepth = tremoloDepth;
-      this.view.render();
+      if (debugView) {
+        this.view.model.frequency = frequency;
+        this.view.model.gain = gain;
+        this.view.model.tremoloFrequency = tremoloFrequency;
+        this.view.model.tremoloDepth = tremoloDepth;
+        this.view.render();
+      }
     });
+
+    this.sharedParams.addParamListener('/start-stop', value => {
+      if (value === 'start')
+        this.synth.start();
+      else if (value === 'stop')
+        this.synth.stop();
+    });
+
     // as show can be async, we make sure that the view is actually rendered
     this.show().then(() => {});
   }

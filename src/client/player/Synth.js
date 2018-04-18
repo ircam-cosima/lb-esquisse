@@ -2,8 +2,11 @@ import { audioContext } from 'soundworks/client';
 
 class Synth {
   constructor() {
+    const now = audioContext.currentTime;
+
     this.volume = audioContext.createGain();
     this.volume.gain.value = 0;
+    this.volume.gain.setValueAtTime(0, now);
 
     // tremolo
     this.tremolo = audioContext.createGain();
@@ -12,61 +15,66 @@ class Synth {
     this.depth = audioContext.createGain();
     this.depth.connect(this.tremolo.gain);
 
-    this.rate = audioContext.createOscillator();
-    this.rate.connect(this.depth);
+    this.osc = null;
+    this.rate = null;
+    this.started = false;
 
-    // main oscillator
-    this.osc = audioContext.createOscillator();
-    this.osc.connect(this.tremolo);
-    this.osc.type = 'sine';
-
-    this.osc.start();
-    this.rate.start();
+    this._frequency = 0;
+    this._tremoloFrequency = 0;
   }
 
-  // start() {
-  //   if (this.osc)
-  //     return;
-  //   // tremolo rate
-  //   this.rate = audioContext.createOscillator();
-  //   this.rate.connect(this.depth);
+  start() {
+    if (!this.started) {
+      // tremolo rate
+      this.rate = audioContext.createOscillator();
+      this.rate.connect(this.depth);
+      this.rate.frequency.value = this._tremoloFrequency;
 
-  //   // main oscillator
-  //   this.osc = audioContext.createOscillator();
-  //   this.osc.connect(this.tremolo);
-  //   this.osc.type = 'sine';
+      // main oscillator
+      this.osc = audioContext.createOscillator();
+      this.osc.connect(this.tremolo);
+      this.osc.frequency.value = this._frequency;
+      this.osc.type = 'sine';
 
-  //   this.osc.start();
-  //   this.rate.start();
-  //   console.log('start');
-  // }
+      this.osc.start();
+      this.rate.start();
+    }
 
-  // stop() {
-  //   if (this.osc) {
-  //     this.osc.stop();
-  //     this.rate.stop();
+    this.started = true;
+  }
 
-  //     this.osc = null;
-  //     this.rate = null;
-  //   }
-  // }
+  stop() {
+    if (this.started) {
+      this.osc.stop();
+      this.rate.stop();
+
+      this.osc = null;
+      this.rate = null;
+    }
+
+    this.started = false;
+  }
 
   connect(destination) {
     this.volume.connect(destination);
   }
 
   set frequency(frequency) {
-    // if (this.osc) {
+    this._frequency = frequency;
+
+    if (this.started) {
       const now = audioContext.currentTime;
-      this.osc.frequency.linearRampToValueAtTime(frequency, now + 0.005);
-    // }
+      this.osc.frequency.linearRampToValueAtTime(this._frequency, now + 0.005);
+    }
   }
 
-  set tremoloFrequency(frequency) {
-    // if (this.rate) {
+  set tremoloFrequency(tremoloFrequency) {
+    this._tremoloFrequency = tremoloFrequency;
+
+    if (this.started) {
       const now = audioContext.currentTime;
-      this.rate.frequency.linearRampToValueAtTime(frequency, now + 0.005);
-    // }
+      this.rate.frequency.linearRampToValueAtTime(this._tremoloFrequency, now + 0.005);
+    }
   }
 
   set gain(gain) {

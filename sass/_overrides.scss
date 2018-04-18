@@ -1,5 +1,5 @@
 #experience {
-  margin: 20px;
+  // margin: 20px;
   font-size: 16px;
 }
 
@@ -15,4 +15,20 @@ input {
   line-height: 40px;
   font-size: 16px;
   padding: 2px;
+}
+
+.foreground {
+  padding: 12px;
+  box-sizing: border-box;
+
+  p {
+    font-size: 0.7rem;
+  }
+
+  .gain-feedback {
+    width: 100px;
+    height: 100px;
+    background-color: #ffffff;
+    margin-top: 20px;
+  }
 }
