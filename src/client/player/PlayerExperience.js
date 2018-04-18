@@ -19,6 +19,9 @@ const template = `
         <p>tremoloFrequency: <%= tremoloFrequency %></p>
         <p>tremoloDepth: <%= tremoloDepth %></p>
 
+        <br />
+        <p>cutoff: <%= cutoff %></p>
+
         <div class="gain-feedback" style="opacity: <%= currentGain %>"></div>
       <% } %>
     </div>
@@ -54,11 +57,16 @@ class PlayerExperience extends soundworks.Experience {
     // initialize the view
     this.master = audioContext.createGain();
     this.master.connect(audioContext.destination);
-    this.master.gain.value = 1;
-    this.master.gain.setValueAtTime(1, audioContext.currentTime);
+    this.master.gain.value = 0;
+    this.master.gain.setValueAtTime(0, audioContext.currentTime);
+
+    this.lowPass = audioContext.createBiquadFilter();
+    this.lowPass.connect(this.master);
+    this.lowPass.frequency.value = 0;
+    this.lowPass.frequency.setValueAtTime(0, audioContext.currentTime);
 
     this.synth = new Synth();
-    this.synth.connect(this.master);
+    this.synth.connect(this.lowPass);
 
     const debugView = true;
 
@@ -71,6 +79,7 @@ class PlayerExperience extends soundworks.Experience {
       gain: 0,
       tremoloFrequency: 0,
       tremoloDepth:0,
+      cutoff: 0,
       currentGain: 0,
     }, {}, {
       id: this.id,
@@ -92,6 +101,20 @@ class PlayerExperience extends soundworks.Experience {
 
       if (debugView) {
         this.view.model.currentGain = Math.sqrt(gain);
+        this.view.render();
+      }
+    });
+
+    this.sharedParams.addParamListener(`/${this.groupLabel}/cutoff`, value => {
+      const cutoff = Math.min(audioContext.sampleRate / 1, Math.max(0, value));
+      const now = audioContext.currentTime;
+
+      this.lowPass.frequency.cancelScheduledValues(now);
+      this.lowPass.frequency.setValueAtTime(this.lowPass.frequency.value, now);
+      this.lowPass.frequency.linearRampToValueAtTime(cutoff, now + 0.05);
+
+      if (debugView) {
+        this.view.model.cutoff = cutoff;
         this.view.render();
       }
     });

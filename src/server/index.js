@@ -61,15 +61,20 @@ osc.receive('/start-stop', value => {
 score.forEach(group => {
   // handle volumes
   const volumeChannel = `/${group.label}/volume`;
-  sharedParams.addNumber(volumeChannel, 'Volume', -80, 6, 1, -20);
+  sharedParams.addNumber(volumeChannel, `${group.label} - Volume`, -80, 6, 1, -20);
 
   osc.receive(volumeChannel, value => sharedParams.update(volumeChannel, value));
+
+  const cutoffChannel = `/${group.label}/cutoff`;
+  sharedParams.addNumber(cutoffChannel, `${group.label} - Cutoff`, 0, 16000, 1, 0);
+
+  osc.receive(cutoffChannel, value => sharedParams.update(cutoffChannel, value));
 
   // handle parts for each groups
   const partsChannel = `/${group.label}/parts`;
   console.log(partsChannel);
   const labels = group.parts.map(part => part.label);
-  sharedParams.addEnum(partsChannel, 'Parts', labels, labels[0]);
+  sharedParams.addEnum(partsChannel, `${group.label} - Parts`, labels, labels[0]);
 
   osc.receive(partsChannel, value => {
     console.log(value);
