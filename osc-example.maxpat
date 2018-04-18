@@ -119,7 +119,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 44.0, 486.0, 287.0, 74.0 ],
 					"style" : "",
-					"text" : "Volumes \n-----------------------------------\nControl cutoff frequency of each group\n\ncutoff is in Hertz between 0 and 16000"
+					"text" : "Cutoff Frequency \n-----------------------------------\nControl cutoff frequency of each group\n\ncutoff is in Hertz between 0 and 16000"
 				}
 
 			}
