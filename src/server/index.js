@@ -2,6 +2,7 @@ import 'source-map-support/register'; // enable sourcemaps in node
 import path from 'path';
 import * as soundworks from 'soundworks/server';
 import PlayerExperience from './PlayerExperience';
+import throttle from 'lodash.throttle';
 
 // score
 import score from '../../score/model.json';
@@ -52,45 +53,66 @@ const osc = soundworks.server.require('osc');
 // common params
 sharedParams.addTrigger('/reload', 'Reload');
 
-sharedParams.addEnum('/start-stop', 'Start / Stop', ['start', 'stop'], 'stop');
-osc.receive('/start-stop', value => {
+sharedParams.addEnum('/start-stop', '/start-stop', ['start', 'stop'], 'stop');
+osc.receive('/start-stop', value => sharedParams.update('/start-stop', value));
 
-  sharedParams.update('/start-stop', value);
-});
+const throttledCallbacks = new Map();
 
 score.forEach(group => {
-  // handle volumes
+  // volumes
   const volumeChannel = `/${group.label}/volume`;
-  sharedParams.addNumber(volumeChannel, `${group.label} - Volume`, -80, 6, 1, -20);
+  sharedParams.addNumber(volumeChannel, volumeChannel, -80, 6, 1, -20);
 
-  osc.receive(volumeChannel, value => sharedParams.update(volumeChannel, value));
+  throttledCallbacks.set(volumeChannel, () => {});
+  osc.receive(volumeChannel, value => {
+    const throttledCallback = throttledCallbacks.get(volumeChannel);
+    throttledCallback(value);
+  });
 
-  const cutoffChannel = `/${group.label}/cutoff`;
-  sharedParams.addNumber(cutoffChannel, `${group.label} - Cutoff`, 0, 16000, 1, 0);
+  // lowpass
+  const lowpassCutoffChannel = `/${group.label}/lowpass-cutoff`;
+  sharedParams.addNumber(lowpassCutoffChannel, lowpassCutoffChannel, 0, 16000, 1, 0);
 
-  osc.receive(cutoffChannel, value => sharedParams.update(cutoffChannel, value));
+  throttledCallbacks.set(lowpassCutoffChannel, () => {});
+  osc.receive(lowpassCutoffChannel, value => {
+    const throttledCallback = throttledCallbacks.get(lowpassCutoffChannel);
+    throttledCallback(value);
+  });
+
+  // highpass
+  const highpassCutoffChannel = `/${group.label}/highpass-cutoff`;
+  sharedParams.addNumber(highpassCutoffChannel, highpassCutoffChannel, 0, 16000, 1, 16000);
+
+  throttledCallbacks.set(highpassCutoffChannel, () => {});
+  osc.receive(highpassCutoffChannel, value => {
+    const throttledCallback = throttledCallbacks.get(highpassCutoffChannel);
+    throttledCallback(value);
+  });
 
   // handle parts for each groups
   const partsChannel = `/${group.label}/parts`;
-  console.log(partsChannel);
   const labels = group.parts.map(part => part.label);
-  sharedParams.addEnum(partsChannel, `${group.label} - Parts`, labels, labels[0]);
+  sharedParams.addEnum(partsChannel, partsChannel, labels, labels[0]);
 
-  osc.receive(partsChannel, value => {
-    console.log(value);
-    sharedParams.update(partsChannel, value);
-  });
+  osc.receive(partsChannel, value => sharedParams.update(partsChannel, value));
 });
 
-// score.forEach(part => sharedParams.addTrigger(part.label, part.label));
+// throttle osc messages to web sockets
+osc.receive('/throttle', value => updateThrottledCallbacks(value));
+// init throttled callbacks at 50
+const defaultThrottle = 100; // milliseconds
+updateThrottledCallbacks(defaultThrottle);
 
-// create the experience
-// activities must be mapped to client types:
-// - the `'player'` clients (who take part in the scenario by connecting to the
-//   server through the root url) need to communicate with the `checkin` (see
-// `src/server/playerExperience.js`) and the server side `playerExperience`.
-// - we could also map activities to additional client types (thus defining a
-//   route (url) of the following form: `/${clientType}`)
+function updateThrottledCallbacks(wait) {
+  wait = Math.max(20, Math.min(1000, wait)); // clamp between 20 and 1000 ms;
+  console.log(`Throttle at ${wait}ms`);
+
+  for (let [channel, fn] of throttledCallbacks) {
+    const callback = throttle(value => sharedParams.update(channel, value), wait);
+    throttledCallbacks.set(channel, callback);
+  }
+}
+
 const experience = new PlayerExperience('player');
 const controller = new soundworks.ControllerExperience('controller');
 
