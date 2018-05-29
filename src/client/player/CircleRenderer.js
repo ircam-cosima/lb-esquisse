@@ -7,10 +7,14 @@ class CircleRenderer extends Canvas2dRenderer {
 
     this.position = position;
     this.radius = null;
-    this.opacity = 0;
+    this._opacity = 1;
 
     this.flag = true;
     this._flash = false;
+  }
+
+  set opacity(value) {
+    this._opacity = Math.max(this._opacity, value);
   }
 
   init() {
@@ -50,7 +54,7 @@ class CircleRenderer extends Canvas2dRenderer {
 
     // const offset = - this.radius / 2;
     // ctx.translate(offset, offset);
-    ctx.globalAlpha = this.opacity;
+    ctx.globalAlpha = this._opacity;
     ctx.fillStyle = '#ffffff';
 
     ctx.beginPath();

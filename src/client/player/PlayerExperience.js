@@ -61,13 +61,11 @@ class PlayerExperience extends soundworks.Experience {
     this.platform = this.require('platform', { features: ['web-audio', 'wake-lock'] });
     this.checkin = this.require('checkin', { showDialog: false });
     this.sharedParams = this.require('shared-params');
-
-    if (client.platform.isMobile)
-      this.motionInput = this.require('motion-input', { descriptors: ['accelerationIncludingGravity'] });
-
+    this.motionInput = this.require('motion-input', { descriptors: ['accelerationIncludingGravity'] });
     this.audioBufferManager = this.require('audio-buffer-manager', { files });
 
     this.group = null;
+    this.streamPosition = false;
   }
 
   start() {
@@ -75,6 +73,9 @@ class PlayerExperience extends soundworks.Experience {
 
     const numGroups = score.length;
     const groupLabels = score.map(group => group.label);
+
+    if (client.urlParams[0] === 'stream')
+      this.streamPosition = true;
 
     // define group and client index inside the group
     this.groupIndex = client.index % numGroups;
@@ -148,8 +149,6 @@ class PlayerExperience extends soundworks.Experience {
     // BIND GENERAL PARAMS
     // ---------------------------------------------------------------------
 
-    // this.circleRenderer.opacity = Math.sqrt(gain);
-
     this.sharedParams.addParamListener('/reload', () => {
       window.location.reload(true);
     });
@@ -219,16 +218,17 @@ class PlayerExperience extends soundworks.Experience {
       const now = audioContext.currentTime;
 
       this.sineSynth.setEnvelop(gain, rampTime);
+      // this.circleRenderer.opacity = Math.sqrt(gain);
     });
 
     this.sharedParams.addParamListener(`/${this.groupLabel}/sine/lowpass-cutoff`, value => {
-      this.setLowpassCutoff(value, 0.04);
-      this.updateDebugViewAndFlash('lowpassCutoff', cutoff);
+      this.sineSynth.setLowpassCutoff(value, 0.04);
+      this.updateDebugViewAndFlash('lowpassCutoff', value);
     });
 
     this.sharedParams.addParamListener(`/${this.groupLabel}/sine/highpass-cutoff`, value => {
-      this.setHighpassCutoff(value, 0.04);
-      this.updateDebugViewAndFlash('highpassCutoff', cutoff);
+      this.sineSynth.setHighpassCutoff(value, 0.04);
+      this.updateDebugViewAndFlash('highpassCutoff', value);
     });
 
     // ---------------------------------------------------------------------
@@ -259,6 +259,7 @@ class PlayerExperience extends soundworks.Experience {
       const now = audioContext.currentTime;
 
       this.granular.gain = gain;
+      // this.circleRenderer.opacity = Math.sqrt(gain);
     });
 
     this.sharedParams.addParamListener(`/${this.groupLabel}/granular/buffer`, value => {
@@ -293,22 +294,20 @@ class PlayerExperience extends soundworks.Experience {
       this.view.addRenderer(this.circleRenderer);
 
       // allow testing on desktop
-      if (client.platform.isMobile) {
-        const period = this.motionInput._descriptorsPeriod.accelerationIncludingGravity;
+      const period = this.motionInput._descriptorsPeriod.accelerationIncludingGravity;
 
-        this.motionInput.addListener('accelerationIncludingGravity', (data, ...args) => {
-          const vx = - data[0] / 9.81;
-          const vy = (data[1] - 5) / 9.81;
+      this.motionInput.addListener('accelerationIncludingGravity', (data, ...args) => {
+        const vx = - data[0] / 9.81;
+        const vy = (data[1] - 5) / 9.81;
 
-          this.mappings.x += (vx * 0.7 * period);
-          this.mappings.y += (vy * 0.7 * period);
+        this.mappings.x += (vx * 0.7 * period);
+        this.mappings.y += (vy * 0.7 * period);
 
-          this.mappings.y = Math.max(0, Math.min(1, this.mappings.y));
-          this.mappings.x = Math.max(0, Math.min(1, this.mappings.x));
+        this.mappings.y = Math.max(0, Math.min(1, this.mappings.y));
+        this.mappings.x = Math.max(0, Math.min(1, this.mappings.x));
 
-          this.updateMappings();
-        });
-      }
+        this.updateMappings();
+      });
     });
   }
 
@@ -320,7 +319,9 @@ class PlayerExperience extends soundworks.Experience {
   }
 
   updateMappings() {
-
+    // #stream urlParam
+    if (this.streamPosition)
+      this.send('/stream-position', this.mappings.x, this.mappings.y);
   }
 
   playSound(buffer, randomPitchVar = 0) {

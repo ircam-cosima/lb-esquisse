@@ -4,12 +4,12 @@ class Synth {
   constructor() {
     const now = audioContext.currentTime;
 
-    this.gain = audioContext.createGain();
-    this.gain.gain.value = 0;
-    this.gain.gain.setValueAtTime(0, now);
+    this.output = audioContext.createGain();
+    this.output.gain.value = 0;
+    this.output.gain.setValueAtTime(0, now);
 
     this.env = audioContext.createGain();
-    this.env.connect(this.gain);
+    this.env.connect(this.output);
     this.env.gain.value = 0;
     this.env.gain.setValueAtTime(0, now);
 
@@ -73,7 +73,7 @@ class Synth {
   }
 
   connect(destination) {
-    this.gain.connect(destination);
+    this.output.connect(destination);
   }
 
   set frequency(frequency) {
@@ -102,7 +102,7 @@ class Synth {
 
   set gain(gain) {
     const now = audioContext.currentTime;
-    this.env.gain.linearRampToValueAtTime(gain, now + 0.005);
+    this.output.gain.linearRampToValueAtTime(gain, now + 0.005);
   }
 
   setEnvelop(gain, rampTime) {
@@ -111,17 +111,17 @@ class Synth {
   }
 
   setHighpassCutoff(freq, rampTime) {
-    const cutoff = Math.min(audioContext.sampleRate / 2, Math.max(0, value));
+    const cutoff = Math.min(audioContext.sampleRate / 2, Math.max(0, freq));
     const now = audioContext.currentTime;
 
-    this.highpass.frequency.linearRampToValueAtTime(freq, now + rampTime);
+    this.highpass.frequency.linearRampToValueAtTime(cutoff, now + rampTime);
   }
 
   setLowpassCutoff(freq, rampTime) {
-    const cutoff = Math.min(audioContext.sampleRate / 2, Math.max(0, value));
+    const cutoff = Math.min(audioContext.sampleRate / 2, Math.max(0, freq));
     const now = audioContext.currentTime;
 
-    this.lowpass.frequency.linearRampToValueAtTime(freq, now + rampTime);
+    this.lowpass.frequency.linearRampToValueAtTime(cutoff, now + rampTime);
   }
 
 }

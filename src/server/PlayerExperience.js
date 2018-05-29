@@ -9,6 +9,8 @@ export default class PlayerExperience extends Experience {
     this.sharedConfig = this.require('shared-config');
     this.sharedParams = this.require('shared-params');
     this.audioBufferManager = this.require('audio-buffer-manager');
+
+    this.osc = this.require('osc');
   }
 
   start() {
@@ -17,6 +19,10 @@ export default class PlayerExperience extends Experience {
 
   enter(client) {
     super.enter(client);
+
+    this.receive(client, '/stream-position', (x, y) => {
+      this.osc.send('/stream-position', [x, y]);
+    });
   }
 
   exit(client) {
