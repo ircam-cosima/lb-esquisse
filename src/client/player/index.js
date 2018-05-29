@@ -21,7 +21,7 @@ function bootstrap() {
   });
 
   // create client side (player) experience and start the client
-  const experience = new PlayerExperience(config.assetsDomain);
+  const experience = new PlayerExperience(config.assetsDomain, config.audioFiles);
   soundworks.client.start();
 }
 

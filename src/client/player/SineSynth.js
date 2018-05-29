@@ -4,13 +4,30 @@ class Synth {
   constructor() {
     const now = audioContext.currentTime;
 
-    this.volume = audioContext.createGain();
-    this.volume.gain.value = 0;
-    this.volume.gain.setValueAtTime(0, now);
+    this.gain = audioContext.createGain();
+    this.gain.gain.value = 0;
+    this.gain.gain.setValueAtTime(0, now);
+
+    this.env = audioContext.createGain();
+    this.env.connect(this.gain);
+    this.env.gain.value = 0;
+    this.env.gain.setValueAtTime(0, now);
+
+    this.lowpass = audioContext.createBiquadFilter();
+    this.lowpass.connect(this.env);
+    this.lowpass.type = 'lowpass';
+    this.lowpass.frequency.value = 0;
+    this.lowpass.frequency.setValueAtTime(0, audioContext.currentTime);
+
+    this.highpass = audioContext.createBiquadFilter();
+    this.highpass.connect(this.lowpass);
+    this.highpass.type = 'highpass';
+    this.highpass.frequency.value = 16000;
+    this.highpass.frequency.setValueAtTime(0, audioContext.currentTime);
 
     // tremolo
     this.tremolo = audioContext.createGain();
-    this.tremolo.connect(this.volume);
+    this.tremolo.connect(this.highpass);
 
     this.depth = audioContext.createGain();
     this.depth.connect(this.tremolo.gain);
@@ -56,7 +73,7 @@ class Synth {
   }
 
   connect(destination) {
-    this.volume.connect(destination);
+    this.gain.connect(destination);
   }
 
   set frequency(frequency) {
@@ -77,15 +94,34 @@ class Synth {
     }
   }
 
-  set gain(gain) {
-    const now = audioContext.currentTime;
-    this.volume.gain.linearRampToValueAtTime(gain, now + 0.005);
-  }
-
   set tremoloDepth(depth) {
     const now = audioContext.currentTime;
     this.depth.gain.linearRampToValueAtTime(depth, now + 0.005);
     this.tremolo.gain.linearRampToValueAtTime(1 - depth, now + 0.005);
+  }
+
+  set gain(gain) {
+    const now = audioContext.currentTime;
+    this.env.gain.linearRampToValueAtTime(gain, now + 0.005);
+  }
+
+  setEnvelop(gain, rampTime) {
+    const now = audioContext.currentTime;
+    this.env.gain.linearRampToValueAtTime(gain, now + rampTime);
+  }
+
+  setHighpassCutoff(freq, rampTime) {
+    const cutoff = Math.min(audioContext.sampleRate / 2, Math.max(0, value));
+    const now = audioContext.currentTime;
+
+    this.highpass.frequency.linearRampToValueAtTime(freq, now + rampTime);
+  }
+
+  setLowpassCutoff(freq, rampTime) {
+    const cutoff = Math.min(audioContext.sampleRate / 2, Math.max(0, value));
+    const now = audioContext.currentTime;
+
+    this.lowpass.frequency.linearRampToValueAtTime(freq, now + rampTime);
   }
 
 }

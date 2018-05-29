@@ -1,13 +1,12 @@
 {
-  "name": "soundworks-template",
+  "name": "llb-color-fields",
   "authors": [
-    "Benjamin Matuszewski",
-    "Sébastien Robaszkiewicz",
-    "Norbert Schnell"
+    "Luciano Leite Barbosa",
+    "Benjamin Matuszewski"
   ],
-  "description": "Soundworks application template.",
+  "description": "Color Fields, Luciano Leite Barbosa - Ircam, Cursus",
   "license": "BSD-3-Clause",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "scripts": {
     "minify": "node ./bin/runner --minify",
     "prewatch": "npm run transpile",
@@ -17,13 +16,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/collective-soundworks/soundworks-template"
+    "url": "https://github.com/ircam-cosima/llb-color-fields"
   },
   "dependencies": {
     "babel-runtime": "^6.6.1",
     "debug": "^3.1.0",
     "lodash.throttle": "^4.1.1",
-    "soundworks": "collective-soundworks/soundworks#v2.1.6",
+    "soundworks": "collective-soundworks/soundworks#v2.1.7",
     "source-map-support": "^0.5.0"
   },
   "devDependencies": {

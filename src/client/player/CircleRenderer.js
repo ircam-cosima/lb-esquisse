@@ -10,6 +10,7 @@ class CircleRenderer extends Canvas2dRenderer {
     this.opacity = 0;
 
     this.flag = true;
+    this._flash = false;
   }
 
   init() {
@@ -20,19 +21,10 @@ class CircleRenderer extends Canvas2dRenderer {
 
   update(dt) {
     super.update(dt);
+  }
 
-    // this.x += this.vx * dt;
-    // this.y += this.vy * dt;
-    // // clamp to screen
-    // this.x = Math.max(0, Math.min(this.canvasWidth, this.x));
-    // this.y = Math.max(0, Math.min(this.canvasHeight, this.y));
-
-    // if (this.timeFadeIn < this.fadeInDuration) {
-    //   this.timeFadeIn += dt;
-    //   this.opacity = Math.min(1, this.timeFadeIn / this.fadeInDuration);
-    // } else {
-    //   this.opacity = 1;
-    // }
+  flash() {
+    this._flash = true;
   }
 
   render(ctx) {
@@ -41,11 +33,20 @@ class CircleRenderer extends Canvas2dRenderer {
     if (!this.flag)
       return;
 
-    ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    const width = this.canvasWidth;
+    const height = this.canvasHeight;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (this._flash === true) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      this._flash = false;
+    }
 
     ctx.save();
-    const x = this.position.x * this.canvasWidth;
-    const y = this.position.y * this.canvasHeight;
+    const x = this.position.x * width;
+    const y = this.position.y * height;
 
     // const offset = - this.radius / 2;
     // ctx.translate(offset, offset);
