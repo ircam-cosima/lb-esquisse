@@ -1,5 +1,6 @@
-# Luciano Leite Barbosa - Esquisse
+# Color Fields, Luciano Leite Barbosa (2018)
 
+> web-based application for _Color Fields_ composed by Luciano Leite Barbosa - Cursus Ircam 2018
 
 ## Audio graph
 
@@ -18,9 +19,3 @@
             sine-envelop 
     (`/group-x/sine/envelop`)
 ```
-
-## List of OSC commands
-
-### general
-
-/

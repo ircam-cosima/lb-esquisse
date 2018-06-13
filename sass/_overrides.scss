@@ -1,34 +1,51 @@
-#experience {
-  // margin: 20px;
-  font-size: 16px;
-}
+// .foreground {
+//   box-sizing: border-box;
 
-label {
-  display: block;
-  margin-bottom: 12px;
-}
+//   p {
+//     font-size: 1.1rem;
+//   }
 
-input {
-  display: block;
-  width: 80%;
-  height: 40px;
-  line-height: 40px;
-  font-size: 16px;
-  padding: 2px;
+//   .gain-feedback {
+//     width: 100px;
+//     height: 100px;
+//     background-color: #ffffff;
+//     margin-top: 20px;
+//   }
+// }
+
+.state {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .foreground {
-  padding: 12px;
-  box-sizing: border-box;
+  padding: 0;
+}
 
-  p {
-    font-size: 1.1rem;
+#testing {
+  background-color: #ffffff;
+}
+
+#title {
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 20px
   }
 
-  .gain-feedback {
-    width: 100px;
-    height: 100px;
-    background-color: #ffffff;
-    margin-top: 20px;
+  h2 {
+    font-size: 1rem;
+    font-weight: normal;
+    font-style: italic;
   }
+}
+
+
+#end {
+  background-color: #ffffff;
+}
+
+
+.main p {
+  font-size: 0.8rem;
 }

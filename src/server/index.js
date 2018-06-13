@@ -3,14 +3,10 @@ import path from 'path';
 import * as soundworks from 'soundworks/server';
 import PlayerExperience from './PlayerExperience';
 import throttle from 'lodash.throttle';
-
 // score
-import score from '../../score/model.json';
-
-console.log(score);
+import score from '../../score/model';
 
 const configName = process.env.ENV || 'default';
-console.log(configName);
 const configPath = path.join(__dirname, 'config', configName);
 let config = null;
 
@@ -31,12 +27,6 @@ if (process.env.PORT)
 // initialize application with configuration options
 soundworks.server.init(config);
 
-const granularAudioFiles = [
-  'sounds/ding.mp3',
-  'sounds/dang.mp3',
-  'sounds/dong.mp3',
-];
-
 // define the configuration object to be passed to the `.ejs` template
 soundworks.server.setClientConfigDefinition((clientType, config, httpRequest) => {
   return {
@@ -47,117 +37,24 @@ soundworks.server.setClientConfigDefinition((clientType, config, httpRequest) =>
     version: config.version,
     defaultType: config.defaultClient,
     assetsDomain: config.assetsDomain,
-    audioFiles: granularAudioFiles,
   };
 });
 
-// parse configuration,
-// create params and osc bindings
-
-const sharedParams = soundworks.server.require('shared-params');
-const osc = soundworks.server.require('osc');
-
-// common params
-sharedParams.addTrigger('/reload', 'Reload');
-
-const throttledCallbacks = new Map();
-
-score.forEach(group => {
-
-  // ------------------------------------------------------
-  // GENERAL PARAMS
-  // ------------------------------------------------------
-  const masterVolumeChannel = `/volume`;
-  sharedParams.addNumber(masterVolumeChannel, masterVolumeChannel, -80, 6, 1, -20);
-  initThrottledOscCallback(masterVolumeChannel);
-
-  const groupVolumeChannel = `/${group.label}/volume`;
-  sharedParams.addNumber(groupVolumeChannel, groupVolumeChannel, -80, 6, 1, 0);
-  initThrottledOscCallback(groupVolumeChannel);
-
-  // handle parts for each groups
-  const partsChannel = `/${group.label}/parts`;
-  const labels = group.parts.map(part => part.label);
-  sharedParams.addEnum(partsChannel, partsChannel, labels, labels[0]);
-  osc.receive(partsChannel, value => sharedParams.update(partsChannel, value));
-
-  // ------------------------------------------------------
-  // SINE PARAMS
-  // ------------------------------------------------------
-
-  const sineStartStopChannel = `/${group.label}/sine`;
-  sharedParams.addEnum(sineStartStopChannel, sineStartStopChannel, ['start', 'stop'], 'stop');
-  osc.receive(sineStartStopChannel, value => sharedParams.update(sineStartStopChannel, value));
-
-  const sineVolumeChannel = `/${group.label}/sine/volume`;
-  sharedParams.addNumber(sineVolumeChannel, sineVolumeChannel, -80, 6, 1, 0);
-  initThrottledOscCallback(sineVolumeChannel);
-
-  const sineEnvelopChannel = `/${group.label}/sine/envelop`;
-  sharedParams.addNumber(sineEnvelopChannel, sineEnvelopChannel, -80, 6, 1, -80);
-  initThrottledOscCallback(sineEnvelopChannel);
-
-  // lowpass
-  const lowpassCutoffChannel = `/${group.label}/sine/lowpass-cutoff`;
-  sharedParams.addNumber(lowpassCutoffChannel, lowpassCutoffChannel, 0, 16000, 1, 0);
-  initThrottledOscCallback(lowpassCutoffChannel);
-
-  // highpass
-  const highpassCutoffChannel = `/${group.label}/sine/highpass-cutoff`;
-  sharedParams.addNumber(highpassCutoffChannel, highpassCutoffChannel, 0, 16000, 1, 16000);
-  initThrottledOscCallback(highpassCutoffChannel);
-
-  // ------------------------------------------------------
-  // GRANULAR PARAMS
-  // ------------------------------------------------------
-
-  const granularStartStopChannel = `/${group.label}/granular`;
-  sharedParams.addEnum(granularStartStopChannel, granularStartStopChannel, ['start', 'stop'], 'stop');
-  osc.receive(granularStartStopChannel, value => sharedParams.update(granularStartStopChannel, value));
-
-  const granularVolumeChannel = `/${group.label}/granular/volume`;
-  sharedParams.addNumber(granularVolumeChannel, granularVolumeChannel, -80, 6, 1, 0);
-  initThrottledOscCallback(granularVolumeChannel);
-
-  const granularEnvelopChannel = `/${group.label}/granular/envelop`;
-  sharedParams.addNumber(granularEnvelopChannel, granularEnvelopChannel, -80, 6, 1, -80);
-  initThrottledOscCallback(granularEnvelopChannel);
-
-  const granularBufferChannel = `/${group.label}/granular/buffer`;
-  sharedParams.addEnum(granularBufferChannel, granularBufferChannel, granularAudioFiles, granularAudioFiles[0]);
-  osc.receive(granularBufferChannel, value => sharedParams.update(granularBufferChannel, value));
-
-  const granularPositionChannel = `/${group.label}/granular/position`;
-  sharedParams.addNumber(granularPositionChannel, granularPositionChannel, 0, 1, 0.001, 0.5);
-  initThrottledOscCallback(granularPositionChannel);
-
-  const granularPositionVarChannel = `/${group.label}/granular/positionVar`;
-  sharedParams.addNumber(granularPositionVarChannel, granularPositionVarChannel, 0, 0.2, 0.001, 0.003);
-  initThrottledOscCallback(granularPositionVarChannel);
-
-  const granularPeriodChannel = `/${group.label}/granular/period`;
-  sharedParams.addNumber(granularPeriodChannel, granularPeriodChannel, 0.01, 0.5, 0.001, 0.02);
-  initThrottledOscCallback(granularPeriodChannel);
-
-  const granularDurationChannel = `/${group.label}/granular/duration`;
-  sharedParams.addNumber(granularDurationChannel, granularDurationChannel, 0.010, 0.500, 0.001, 0.100);
-  initThrottledOscCallback(granularDurationChannel);
-
-  const granularResamplingChannel = `/${group.label}/granular/resampling`;
-  sharedParams.addNumber(granularResamplingChannel, granularResamplingChannel, -2400, 2400, 1, 0);
-  initThrottledOscCallback(granularResamplingChannel);
-
-  const granularResamplingVarChannel = `/${group.label}/granular/resamplingVar`;
-  sharedParams.addNumber(granularResamplingVarChannel, granularResamplingVarChannel, 0, 1200, 1, 0);
-  initThrottledOscCallback(granularResamplingVarChannel);
-
+// serve config file (score)
+soundworks.server.router.get('/config', (req, res) => {
+  if (config.env === 'production') {
+    res.json(JSON.stringify(score));
+  } else {
+    const _score = require('../../score/model');
+    res.json(JSON.stringify(_score));
+  }
 });
 
-// throttle osc messages to web sockets
-osc.receive('/throttle', value => updateThrottledOscCallbacks(value));
-// init throttled callbacks at 50
-const defaultThrottle = 50; // milliseconds
-updateThrottledOscCallbacks(defaultThrottle);
+// init clients
+const experience = new PlayerExperience('player', score);
+const controller = new soundworks.ControllerExperience('controller', score);
+
+const throttledCallbacks = new Map();
 
 function initThrottledOscCallback(channel) {
   throttledCallbacks.set(channel, () => {});
@@ -173,13 +70,68 @@ function updateThrottledOscCallbacks(wait) {
   console.log(`Throttle at ${wait}ms`);
 
   for (let [channel, fn] of throttledCallbacks) {
-    const callback = throttle(value => sharedParams.update(channel, value), wait);
+    const callback = throttle(value => dispatch(channel, value), wait);
     throttledCallbacks.set(channel, callback);
   }
 }
 
-const experience = new PlayerExperience('player');
-const controller = new soundworks.ControllerExperience('controller');
+function dispatch(channel, value) {
+  experience.dispatch(channel, value);
+  // controller.dispatch(channel, value);
+}
+
+// create params channels and tunneling
+const sharedParams = soundworks.server.require('shared-params');
+const osc = soundworks.server.require('osc');
+
+sharedParams.addBoolean('/debug', 'debug', false);
+sharedParams.addBoolean('/emulateMvmt', 'emulateMvmt', false);
+
+// common params
+sharedParams.addTrigger('/reload', 'reload');
+// states
+sharedParams.addEnum('/state', '/state', ['testing', 'title', 'performance', 'end'], 'testing');
+osc.receive('/state', state => sharedParams.update('/state', state));
+
+const masterVolumeChannel = `/volume`;
+sharedParams.addNumber(masterVolumeChannel, masterVolumeChannel, -80, 30, 1, 0);
+osc.receive(masterVolumeChannel, db => sharedParams.update(masterVolumeChannel, db + 15));
+
+score.forEach(group => {
+  // general params
+  const groupVolumeChannel = `/${group.label}/volume`;
+  sharedParams.addNumber(groupVolumeChannel, groupVolumeChannel, -80, 30, 1, 0);
+  osc.receive(groupVolumeChannel, db => sharedParams.update(groupVolumeChannel, db + 15));
+
+  // synths
+  for (let i = 0; i < 2; i++) {
+    const synthPartsChannel = `/${group.label}/synth/${i}/parts`;
+    osc.receive(synthPartsChannel, value => dispatch(synthPartsChannel, value));
+
+    const synthStartStopChannel = `/${group.label}/synth/${i}/toggle`;
+    osc.receive(synthStartStopChannel, value => dispatch(synthStartStopChannel, value));
+
+    const synthVolumeChannel = `/${group.label}/synth/${i}/volume`;
+    initThrottledOscCallback(synthVolumeChannel);
+
+    const synthEnvelopChannel = `/${group.label}/synth/${i}/envelop`;
+    initThrottledOscCallback(synthEnvelopChannel);
+
+    // lowpass
+    const synthLowpassCutoffChannel = `/${group.label}/synth/${i}/lowpass-cutoff`;
+    initThrottledOscCallback(synthLowpassCutoffChannel);
+
+    // highpass
+    const synthHighpassCutoffChannel = `/${group.label}/synth/${i}/highpass-cutoff`;
+    initThrottledOscCallback(synthHighpassCutoffChannel);
+  }
+});
+
+// throttle osc messages to web sockets
+osc.receive('/throttle', value => updateThrottledOscCallbacks(value));
+// init throttled callbacks at 50
+const defaultThrottle = 50; // milliseconds
+updateThrottledOscCallbacks(defaultThrottle);
 
 // start application
 soundworks.server.start();

@@ -2,7 +2,7 @@
 import * as soundworks from 'soundworks/client';
 // import PlayerExperience from './PlayerExperience';
 import serviceViews from '../shared/serviceViews';
-import score from '../../../score/model.json';
+// import score from '../../../score/model.json';
 
 function bootstrap() {
 
@@ -25,15 +25,30 @@ function bootstrap() {
     confirm: true,
   });
 
-  controller.setGuiOptions('/start-stop', {
+  controller.setGuiOptions('/state', {
     type: 'buttons',
   });
 
+  controller.setGuiOptions('/volume', {
+    type: 'slider',
+    size: 'large',
+  });
 
-  // controller.setGuiOptions('volume', {
-  //   type: 'slider',
-  //   size: 'large',
-  // });
+  controller.setGuiOptions('/group-1/volume', {
+    type: 'slider',
+    size: 'large',
+  });
+
+  controller.setGuiOptions('/group-2/volume', {
+    type: 'slider',
+    size: 'large',
+  });
+
+  controller.setGuiOptions('/group-3/volume', {
+    type: 'slider',
+    size: 'large',
+  });
+
 
   soundworks.client.start();
 }

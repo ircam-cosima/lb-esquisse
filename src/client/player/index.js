@@ -2,27 +2,25 @@
 import * as soundworks from 'soundworks/client';
 import PlayerExperience from './PlayerExperience';
 import serviceViews from '../shared/serviceViews';
+import 'whatwg-fetch';
 
-function bootstrap() {
-
+function bootstrap(score) {
   document.body.classList.remove('loading');
 
-  // initialize the client with configuration received
-  // from the server through the `index.html`
-  // @see {~/src/server/index.js}
-  // @see {~/html/default.ejs}
   const config = Object.assign({ appContainer: '#container' }, window.soundworksConfig);
-  soundworks.client.init(config.clientType, config);
 
-  // configure views for the services
+  soundworks.client.init(config.clientType, config);
   soundworks.client.setServiceInstanciationHook((id, instance) => {
     if (serviceViews.has(id))
       instance.view = serviceViews.get(id, config);
   });
 
-  // create client side (player) experience and start the client
-  const experience = new PlayerExperience(config.assetsDomain, config.audioFiles);
+  const experience = new PlayerExperience(config.assetsDomain, score);
   soundworks.client.start();
 }
 
-window.addEventListener('load', bootstrap);
+window.addEventListener('load', () => {
+  fetch('/config?' + Math.random())
+    .then(res => res.json())
+    .then(score => bootstrap(JSON.parse(score)));
+});
