@@ -1,17 +1,11 @@
-
-
 class BaseState {
   constructor(name) {
     this.name = name;
   }
 
-  enter(experience) {
-    console.log('enter', this.name);
-  }
+  enter(experience) {}
 
-  exit(experience) {
-    console.log('exit', this.name);
-  }
+  exit(experience) {}
 }
 
 export default BaseState;

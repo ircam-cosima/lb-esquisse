@@ -49,3 +49,47 @@
 .main p {
   font-size: 0.8rem;
 }
+
+.fs-12 {
+  font-size: 1.2rem;
+}
+
+.group-feedback {
+  width: 772px;
+  padding: 4px;
+  outline: 1px solid #454545;
+  border-radius: 3px;
+  margin: 10px auto;
+
+  & > div {
+    padding: 6px;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: normal;
+  }
+
+  .state {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid #909090;
+    position: relative;
+    display: inline-block;
+
+    &.active {
+      background-color: green;
+    }
+  }
+
+  .part, .envelop {
+    display: inline-block;
+    height: 20px;
+    width: 120px;
+    font-size: 1rem;
+    position: relative;
+    top: -8px;
+    padding-left: 20px;
+  }
+}

@@ -52,7 +52,7 @@ soundworks.server.router.get('/config', (req, res) => {
 
 // init clients
 const experience = new PlayerExperience('player', score);
-const controller = new soundworks.ControllerExperience('controller', score);
+const controller = new soundworks.ControllerExperience('controller', { auth: true });
 
 const throttledCallbacks = new Map();
 
@@ -78,11 +78,14 @@ function updateThrottledOscCallbacks(wait) {
 function dispatch(channel, value) {
   experience.dispatch(channel, value);
   // controller.dispatch(channel, value);
+  controller.broadcast('controller', null, channel, value);
 }
 
 // create params channels and tunneling
 const sharedParams = soundworks.server.require('shared-params');
 const osc = soundworks.server.require('osc');
+
+sharedParams.addText('numPlayers', 'numPlayers', 0, ['controller']);
 
 sharedParams.addBoolean('/debug', 'debug', false);
 sharedParams.addBoolean('/emulateMvmt', 'emulateMvmt', false);

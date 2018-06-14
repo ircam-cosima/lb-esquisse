@@ -20,7 +20,7 @@ module.exports.process = function(src, dist, sassOptions) {
 
       fse.outputFile(dist.abs, result.css, function(err) {
         if (err)
-          return console.error(err.message);
+          return console.error(err.stack);
 
         resolve([src, dist]);
       });

@@ -1,21 +1,22 @@
 import { Canvas2dRenderer } from 'soundworks/client';
 
 class CircleRenderer extends Canvas2dRenderer {
-  constructor(model) {
+  constructor(model, radius = null) {
     super();
 
     this.model = model;
-    this.radius = null;
+    this.radius = radius;
   }
 
   init() {
-    this.radius = Math.min(this.canvasWidth, this.canvasHeight) / 6;
+    if (this.radius === null)
+      this.radius = Math.min(this.canvasWidth, this.canvasHeight) / 6;
   }
 
   render(ctx) {
     const opacity = Math.sqrt(this.model.value);
 
-    if (this.model.state === 'stop' || opacity < 0.001)
+    if (opacity < 0.001 || this.model.state === 'stop')
       return;
 
     const x = this.model.x * this.canvasWidth;

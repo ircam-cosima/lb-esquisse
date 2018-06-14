@@ -612,19 +612,18 @@ const serviceViews = {
         <% } else { %>
           <div class="section-top flex-middle"></div>
           <div class="section-center flex-center">
-              <p class="big">
-                <%= intro %>
+              <p>
+                <b class="big"><%= globals.appName %></b>
                 <br />
-                <b><%= globals.appName %></b>
+                <br />
+                <% if (checking === true) { %>
+                <span class="small soft-blink"><%= checkingMessage %></span>
+                <% } else if (hasAuthorizations === true) { %>
+                <span class="fs-12 soft-blink"><%= instructions %></span>
+                <% } %>
               </p>
           </div>
-          <div class="section-bottom flex-middle">
-            <% if (checking === true) { %>
-            <p class="small soft-blink"><%= checkingMessage %></p>
-            <% } else if (hasAuthorizations === true) { %>
-            <p class="small soft-blink"><%= instructions %></p>
-            <% } %>
-          </div>
+          <div class="section-bottom flex-middle"></div>
         <% } %>
       `;
 
@@ -633,9 +632,13 @@ const serviceViews = {
         hasAuthorizations: null,
         checking: false,
         intro: '',
-        instructions: 'Touch the screen to join!',
+        instructions: `Touchez l'écran<br />Touch the screen`,
         checkingMessage: 'Please wait while checking compatiblity',
-        errorCompatibleMessage: 'Sorry,<br />Your device is not compatible with the application.',
+        errorCompatibleMessage: `
+          Désolé, votre mobile n'est pas compatible avec l'application
+          <br /><br />
+          Sorry, your device is not compatible with the application.
+        `,
         errorHooksMessage: `Sorry,<br />The application didn't obtain the necessary authorizations.`,
       };
 

@@ -34,6 +34,8 @@ class PerformanceState extends BaseState {
       { x: 0.5, y: 0.5, value: 0, state: 'stop' },
     ];
 
+    this.position = { x: 0.5, y: 0.5, value: 0.1 };
+
     this.audioMappings = [[], []];
     this.renderers = [];
     this.synths = [];
@@ -49,7 +51,10 @@ class PerformanceState extends BaseState {
     this._onDebug = this._onDebug.bind(this);
     this._onEmulateMvmt = this._onEmulateMvmt.bind(this);
     this._emulateMvmt = false;
-    this._emulateOscillators = { x: null, y: null };
+    this._emulateOscillators = {
+      x: new Osc(1 / (Math.random() * 20 + 10)),
+      y: new Osc(1 / (Math.random() * 20 + 10)),
+    };
 
     this.view = new soundworks.CanvasView(template, {
       debug: false,
@@ -118,6 +123,10 @@ class PerformanceState extends BaseState {
 
     const clearCanvas = (ctx, dt, width, height) => ctx.clearRect(0, 0, width, height);
     this.view.setPreRender(clearCanvas);
+
+    // position - renderer
+    const positionRenderer = new CircleRenderer(this.position, 2);
+    this.view.addRenderer(positionRenderer);
 
     // init audio visual rendering
     for (let i = 0; i < 2; i++) {
@@ -278,7 +287,6 @@ class PerformanceState extends BaseState {
 
     experience.sharedParams.removeParamListener('/debug', this._onDebug);
     experience.sharedParams.removeParamListener('/emulateMvmt', this._onEmulateMvmt);
-
     experience.sharedParams.removeParamListener(`/${client.groupLabel}/volume`, this._updateGroupMaster);
     experience.removeMotionListener(this._onMotionData);
 
@@ -297,8 +305,8 @@ class PerformanceState extends BaseState {
 
     this.mixers.forEach(mixer => mixer.gain.linearRampToValueAtTime(0, now + transitionDuration));
 
+    // clean the mess - @todo review
     setTimeout(() => {
-      // clean the mess - @todo review
       this.renderers.forEach(renderer => this.view.removeRenderer(renderer));
 
       this.mixers.forEach(mixer => mixer.disconnect());
@@ -313,23 +321,41 @@ class PerformanceState extends BaseState {
   }
 
   _onMotionData(data, period) {
-    let x;
-    let y;
+    // integrate movement between 0.25 and 0.75
+    const vx = - data[0] / 9.81;
+    const vy = (data[1] - 5) / 9.81;
 
-    if (!this._emulateMvmt) {
-      const vx = - data[0] / 9.81;
-      const vy = (data[1] - 5) / 9.81;
+    let posX = this.position.x;
+    let posY = this.position.y;
+    // integrate acceleration
+    posX += (vx * 0.7 * period);
+    posY += (vy * 0.7 * period);
 
-      x = this.mappingModels[0].x
-      y = this.mappingModels[0].y
-      // integrate acceleration
-      x += (vx * 0.7 * period);
-      y += (vy * 0.7 * period);
-    } else {
-      const now = audioContext.currentTime;
-      x = this._emulateOscillators.x.process(now) * 0.5 + 0.5;
-      y = this._emulateOscillators.y.process(now) * 0.5 + 0.5;
-    }
+    posX = Math.max(0.25, Math.min(0.75, posX));
+    posY = Math.max(0.25, Math.min(0.75, posY));
+
+    this.position.x = posX;
+    this.position.y = posY;
+
+    const now = new Date().getTime() / 1000;
+    let x = this._emulateOscillators.x.process(now) * 0.25 + posX;
+    let y = this._emulateOscillators.y.process(now) * 0.25 + posY;
+
+    // if (!this._emulateMvmt) {
+    //   const vx = - data[0] / 9.81;
+    //   const vy = (data[1] - 5) / 9.81;
+
+    //   x = this.mappingModels[0].x
+    //   y = this.mappingModels[0].y
+    //   // integrate acceleration
+    //   x += (vx * 0.7 * period);
+    //   y += (vy * 0.7 * period);
+    // } else {
+    //   const now = new Date().getTime() / 1000;
+    //   x = this._emulateOscillators.x.process(now) * 0.5 + 0.5;
+    //   y = this._emulateOscillators.y.process(now) * 0.5 + 0.5;
+    // }
+
     // clamp
     y = Math.max(0, Math.min(1, y));
     x = Math.max(0, Math.min(1, x));

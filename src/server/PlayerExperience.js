@@ -20,9 +20,7 @@ class PlayerExperience extends Experience {
     this.score.forEach(group => this.groupPlayersMap.set(group.label, new Set()));
   }
 
-  start() {
-
-  }
+  start() {}
 
   enter(client) {
     super.enter(client);
@@ -34,10 +32,10 @@ class PlayerExperience extends Experience {
     const groupSet = this.groupPlayersMap.get(groupLabel);
     groupSet.add(client);
 
+    this.sharedParams.update('numPlayers', this.clients.length);
+
     // for testing purpose only
-    this.receive(client, '/stream-position', (x, y) => {
-      this.osc.send('/stream-position', [x, y]);
-    });
+    // this.receive(client, '/stream-position', (x, y) => this.osc.send('/stream-position', [x, y]));
   }
 
   exit(client) {
@@ -45,13 +43,17 @@ class PlayerExperience extends Experience {
     groupSet.delete(client);
 
     super.exit(client);
+
+    this.sharedParams.update('numPlayers', this.clients.length);
   }
 
   dispatch(channel, value) {
     const match = channel.match(groupRegExp);
 
-    if (match === null)
+    if (match === null) {
       console.error(`${channel} does not match any group`);
+      return;
+    }
 
     const groupLabel = match[1];
     const clients = this.groupPlayersMap.get(groupLabel);

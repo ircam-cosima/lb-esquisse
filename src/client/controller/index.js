@@ -1,6 +1,6 @@
 // import client side soundworks and player experience
 import * as soundworks from 'soundworks/client';
-// import PlayerExperience from './PlayerExperience';
+import Controller from './Controller';
 import serviceViews from '../shared/serviceViews';
 // import score from '../../../score/model.json';
 
@@ -19,37 +19,7 @@ function bootstrap() {
       instance.view = serviceViews.get(id, config);
   });
 
-  const controller = new soundworks.ControllerExperience();
-
-  controller.setGuiOptions('/reload', {
-    confirm: true,
-  });
-
-  controller.setGuiOptions('/state', {
-    type: 'buttons',
-  });
-
-  controller.setGuiOptions('/volume', {
-    type: 'slider',
-    size: 'large',
-  });
-
-  controller.setGuiOptions('/group-1/volume', {
-    type: 'slider',
-    size: 'large',
-  });
-
-  controller.setGuiOptions('/group-2/volume', {
-    type: 'slider',
-    size: 'large',
-  });
-
-  controller.setGuiOptions('/group-3/volume', {
-    type: 'slider',
-    size: 'large',
-  });
-
-
+  const controller = new Controller();
   soundworks.client.start();
 }
 

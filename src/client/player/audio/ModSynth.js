@@ -65,14 +65,14 @@ class ModSynth {
     setParam(this.depth.gain, 0);
     setParam(this.modRatio.gain, 0);
 
+    this._frequency = 0;
+    this._modFrequency = 0;
+    this._tremoloFrequency = 0;
+
     if (this.started) {
-      setParam(this.osc.frequency, 0);
-      setParam(this.tremoloFrequency.frequency, 0);
-      setParam(this.modFrequency.frequency, 0);
-      // @todo - recheck
-      this._frequency = 0;
-      this._modFrequency = 0;
-      this._tremoloFrequency = 0;
+      setParam(this.osc.frequency, this._frequency);
+      setParam(this.modFrequency.frequency, this._modFrequency);
+      setParam(this.tremoloFrequency.frequency, this._tremoloFrequency);
     }
   }
 
@@ -108,16 +108,19 @@ class ModSynth {
   stop() {
     if (this.started) {
       const now = audioContext.currentTime;
+      const rampDuration = 0.02;
 
-      this.osc.stop(now);
-      this.tremoloFrequency.stop(now);
+      rampParam(this.envelop.gain, 0, rampDuration);
+      this.osc.stop(now + 0.02);
+      this.tremoloFrequency.stop(now + 0.02);
 
-      this.osc = null;
-      this.tremoloFrequency = null;
+      this.osc.onended = () => {
+        this.osc = null;
+        this.tremoloFrequency = null;
+        this.started = false;
 
-      this.started = false;
-
-      this.reset();
+        this.reset();
+      }
     }
   }
 

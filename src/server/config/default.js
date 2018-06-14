@@ -90,7 +90,7 @@ export default {
   },
 
   // password to be used by the `auth` service
-  password: '',
+  password: 'niap',
 
   // configuration of the `osc` service
   osc: {
