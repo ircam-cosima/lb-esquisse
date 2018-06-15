@@ -4,6 +4,8 @@
 /public/css
 /dist
 
+bin/.browserify-cache.json
+
 /score/model.json
 
 # ignore all config except default

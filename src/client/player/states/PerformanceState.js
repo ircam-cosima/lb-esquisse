@@ -230,6 +230,8 @@ class PerformanceState extends BaseState {
           synth.start();
           this.mappingModels[i].state = 'start';
         } else {
+          this.audioMappings[i] = [];
+
           synth.stop();
           this.mappingModels[i].state = 'stop';
           this.mappingModels[i].value = 0;
